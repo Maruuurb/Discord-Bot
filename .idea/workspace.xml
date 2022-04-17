@@ -4,9 +4,7 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="b8803018-a987-4f54-a9f2-51a6094e76f9" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/bot.go" afterDir="false" />
-    </list>
+    <list default="true" id="b8803018-a987-4f54-a9f2-51a6094e76f9" name="Changes" comment="First step:&#10;- Get Ip" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -111,6 +109,10 @@
       </map>
     </option>
     <option name="oldMeFiltersMigrated" value="true" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="First step:&#10;- Get Ip" />
+    <option name="LAST_COMMIT_MESSAGE" value="First step:&#10;- Get Ip" />
   </component>
   <component name="VgoProject">
     <integration-enabled>true</integration-enabled>
