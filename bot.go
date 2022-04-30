@@ -17,6 +17,7 @@ var (
 	GuildID        = flag.String("guild", "", "Test guild ID. If not passed - bot registers commands globally")
 	Token          string
 	RemoveCommands = flag.Bool("rmcmd", false, "Remove all commands after shutdowning or not")
+	AppID          = flag.String("app", "", "Application ID")
 )
 var s *discordgo.Session
 
@@ -30,16 +31,26 @@ var (
 
 	commands = []*discordgo.ApplicationCommand{
 		{
-			Name: "ip",
-			// All commands and options must have a description
-			// Commands/options without description will fail the registration
-			// of the command.
+			Name:        "ip",
 			Description: "The command that sends the server IP",
+			Type:        discordgo.MessageApplicationCommand,
+		},
+		{
+			Name:        "win",
+			Description: "The command that sends the winner day",
+			Type:        discordgo.MessageApplicationCommand,
+		},
+		{
+			Name:        "rickroll",
+			Description: "The command that sends the winner day",
+			Type:        discordgo.MessageApplicationCommand,
 		},
 	}
 
 	commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate){
-		"ip": messageCreate,
+		"ip":       messageIPCreate,
+		"win":      messageWinCreate,
+		"rickroll": rickroll,
 	}
 )
 
@@ -80,7 +91,7 @@ func main() {
 	s.Close()
 }
 
-func messageCreate(s *discordgo.Session, m *discordgo.InteractionCreate) {
+func messageIPCreate(s *discordgo.Session, m *discordgo.InteractionCreate) {
 
 	resp, err := http.Get("http://myexternalip.com/raw")
 	if err != nil {
@@ -107,13 +118,8 @@ func messageCreate(s *discordgo.Session, m *discordgo.InteractionCreate) {
 				Content: "IP майнкрафт сервера : " + bodyString + ":25565",
 			},
 		})
-		//_, err = m.InteractionRespond(m.Interaction, "IP майнкрафт сервера : "+bodyString+":25565")
 		if err != nil {
-			// If an error occurred, we failed to send the message.
-			//
-			// It may occur either when we do not share a server with the
-			// user (highly unlikely as we just received a message) or
-			// the user disabled DM in their settings (more likely).
+
 			fmt.Println("error sending DM message:", err)
 			s.ChannelMessageSend(
 				m.ChannelID,
@@ -124,4 +130,76 @@ func messageCreate(s *discordgo.Session, m *discordgo.InteractionCreate) {
 		fmt.Println(bodyString)
 	}
 
+}
+func messageWinCreate(s *discordgo.Session, m *discordgo.InteractionCreate) {
+
+	resp, err := http.Get("http://myexternalip.com/raw")
+	if err != nil {
+		os.Stderr.WriteString(err.Error())
+		os.Stderr.WriteString("\n")
+		os.Exit(1)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusOK {
+		bodyBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
+		bodyString := string(bodyBytes)
+		s.InteractionRespond(m.Interaction, &discordgo.InteractionResponse{
+
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+
+			Data: &discordgo.InteractionResponseData{
+
+				Flags: 1 << 6,
+
+				Content: "IP майнкрафт сервера : " + bodyString + ":25565",
+			},
+		})
+		if err != nil {
+
+			fmt.Println("error sending DM message:", err)
+			s.ChannelMessageSend(
+				m.ChannelID,
+				"Failed to send you a DM. "+
+					"Did you disable DM in your privacy settings?",
+			)
+		}
+		fmt.Println(bodyString)
+	}
+
+}
+func rickroll(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Content: "Operation rickroll has begun",
+			Flags:   1 << 6,
+		},
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	ch, err := s.UserChannelCreate(
+		i.ApplicationCommandData().TargetID,
+	)
+	if err != nil {
+		_, err = s.FollowupMessageCreate(*AppID, i.Interaction, true, &discordgo.WebhookParams{
+			Content: fmt.Sprintf("Mission failed. Cannot send a message to this user: %q", err.Error()),
+			Flags:   1 << 6,
+		})
+		if err != nil {
+			panic(err)
+		}
+	}
+	_, err = s.ChannelMessageSend(
+		ch.ID,
+		fmt.Sprintf("%s sent you this: https://youtu.be/dQw4w9WgXcQ", i.Member.Mention()),
+	)
+	if err != nil {
+		panic(err)
+	}
 }
